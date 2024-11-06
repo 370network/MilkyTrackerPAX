@@ -73,7 +73,7 @@ void Tracker::buildDefaultSettings()
 	settingsDatabase->store("MIXERVOLUME", 256);
 	settingsDatabase->store("MIXERSHIFT", 1);
 	settingsDatabase->store("RAMPING", 1);
-	settingsDatabase->store("INTERPOLATION", 1);
+	settingsDatabase->store("INTERPOLATION", 0);
 	settingsDatabase->store("MIXERFREQ", PlayerMaster::getPreferredSampleRate());
 #ifdef __FORCEPOWEROFTWOBUFFERSIZE__
 	settingsDatabase->store("FORCEPOWEROFTWOBUFFERSIZE", 1);
