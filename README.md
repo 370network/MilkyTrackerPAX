@@ -3,8 +3,7 @@ MilkyTracker v0.90.86 PAX
 
 ***Beware: this modification is not done properly and might annoy anyone with real programming knowledge***
 
-MilkyTracker v0.90.86 fork with necessary modifications for PAX terminals
-Includes a crosscompile helper for CMake, includes backported CMake build system files
+MilkyTracker v0.90.86 fork with necessary modifications for PAX terminals. Includes a crosscompile helper for CMake, includes backported CMake build system files and is heavily hardcoded, please take your time to change paths accordingly.
 
 Uses keypad for controls (currently only X to exit) and touchscreen for UI interaction.
 
