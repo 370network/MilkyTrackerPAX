@@ -690,6 +690,27 @@ void translateKeyUpEvent(const SDL_Event& event)
 	PPEvent myEvent(eKeyUp, &chr, sizeof(chr));	
 	RaiseEventSerialized(&myEvent);	
 }
+static bool done;
+
+void exitSDLEventLoop(bool serializedEventInvoked/* = true*/)
+{
+	PPEvent event(eAppQuit);
+	RaiseEventSerialized(&event);
+	
+	// it's necessary to make this mutex lock because the SDL modal event loop
+	// used in the modal dialogs expects modal dialogs to be invoked by
+	// events within these mutex lock calls
+	if (!serializedEventInvoked)
+		globalMutex->lock();
+		
+	bool res = myTracker->shutDown();
+	
+	if (!serializedEventInvoked)
+		globalMutex->unlock();
+	
+	if (res)
+		done = 1;
+}
 
 void processSDLEvents(const SDL_Event& event)
 {
@@ -721,6 +742,9 @@ void processSDLEvents(const SDL_Event& event)
 			
 		case SDL_KEYDOWN:
 			translateKeyDownEvent(event);
+                        printf("%d %d %d\n", event.key.keysym.scancode, event.key.keysym.sym, event.key.keysym.unicode);
+			if (event.key.keysym.scancode == 223)
+				exit(0);
 			break;
 
 		case SDL_KEYUP:
@@ -943,27 +967,8 @@ void initTracker(pp_uint32 bpp, PPDisplayDevice::Orientations orientation,
 	timerMutex->unlock();
 }
 
-static bool done;
 
-void exitSDLEventLoop(bool serializedEventInvoked/* = true*/)
-{
-	PPEvent event(eAppQuit);
-	RaiseEventSerialized(&event);
-	
-	// it's necessary to make this mutex lock because the SDL modal event loop
-	// used in the modal dialogs expects modal dialogs to be invoked by
-	// events within these mutex lock calls
-	if (!serializedEventInvoked)
-		globalMutex->lock();
-		
-	bool res = myTracker->shutDown();
-	
-	if (!serializedEventInvoked)
-		globalMutex->unlock();
-	
-	if (res)
-		done = 1;
-}
+
 
 void SendFile(char *file)
 {
@@ -974,21 +979,29 @@ void SendFile(char *file)
 	RaiseEventSerialized(&event);		
 }
 
-#if defined(__PSP__)
-extern "C" int SDL_main(int argc, char *argv[])
-#else
-int main(int argc, char *argv[])
-#endif
+__attribute__((constructor))
+int app_start()
 {
+
+	SDL_putenv("SDL_VIDEODRIVER=fbcon");
+	SDL_putenv("SDL_FBDEV=/dev/fb");
+
+	SDL_putenv("SDL_AUDIODRIVER=dsp");
+	SDL_putenv("SDL_PATH_DSP=/dev/snd/dsp");
+
 	Uint32 videoflags;	
 	SDL_Event event;
 	char *loadFile = 0;
-	
-	pp_int32 defaultBPP = -1;
+
+	int argc;
+	char *argv[0];	
+
+	pp_int32 defaultBPP = 16;
 	PPDisplayDevice::Orientations orientation = PPDisplayDevice::ORIENTATION_NORMAL;
 	bool swapRedBlue = false, fullScreen = false, noSplash = false;
 	bool recVelocity = false;
-	
+
+#ifdef __donotcompile__
 	// Parse command line
 	while ( argc > 1 ) 
 	{
@@ -1051,6 +1064,7 @@ unrecognizedCommandLineSwitch:
 			}
 		}
 	}
+#endif
 
 	// Workaround for seg-fault in SDL_Init on Eee PC (thanks nostromo)
 	// (see http://forum.eeeuser.com/viewtopic.php?pid=136945)
@@ -1082,11 +1096,12 @@ unrecognizedCommandLineSwitch:
 		path.change(oldCwd);
 		SendFile(loadFile);
 		path.change(newCwd);
-		pp_uint16 chr[3] = {VK_RETURN, 0, 0};
-		PPEvent event(eKeyDown, &chr, sizeof(chr));
-		RaiseEventSerialized(&event);
+		//pp_uint16 chr[3] = {VK_RETURN, 0, 0};
+		//PPEvent event(eKeyDown, &chr, sizeof(chr));
+		//RaiseEventSerialized(&event);
 	}
 	
+
 	/* Main event loop */
 	done = 0;
 	while (!done && SDL_WaitEvent(&event)) 
