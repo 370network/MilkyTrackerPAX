@@ -34,6 +34,11 @@ set(VER_YY 90)
 set(VER_ZZ 87)
 set(VER_FULL "${VER_X}.${VER_YY}.${VER_ZZ}")
 
+if(POLICY CMP0014)
+  cmake_policy(SET CMP0014 OLD)
+endif()
+
+
 # Generate version header from the above
 configure_file(
     ${PROJECT_SOURCE_DIR}/src/tracker/version.h.in
